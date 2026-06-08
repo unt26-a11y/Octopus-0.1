@@ -35,7 +35,7 @@
 
   function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
-  /* =================== MOTEUR : Web Worker (+ repli Runner) =================== */
+
   var worker = null, workerReady = false, workerDead = false, reqSeq = 0, pending = {}, curLog = null, onStatusCb = null;
   function workerSupported() { return (typeof Worker !== "undefined") && location.protocol !== "file:"; }
   function ensureWorker(onStatus) {
@@ -86,7 +86,7 @@
       "__news_json = _b64.b64decode('" + newsB64 + "').decode('utf-8')\n";
   }
 
-  /* =================== LE CODE DE L'IA (fichier ia.py par défaut) =================== */
+ 
   var AI_PY = `import json, base64, pickle, numpy as np, pandas as pd
 import sklearn
 from sklearn.linear_model import SGDRegressor
@@ -955,7 +955,7 @@ try:
     if not math.isfinite(vol_scale):
         vol_scale = 1.0
 
-    # ============================ SECTION SUPERVISEE (SGDRegressor) ============================
+    
     sl = None
     if not __model_in:
         sl = {'trained': False, 'reason': "modele supervise pas encore entraine - lance ia.py"}
@@ -1032,7 +1032,7 @@ try:
                           'intercept': fin(intercept), 'intercept_pct': fin(intercept * 100),
                           'contribs': contribs, 'ignored': ignored}
 
-    # ============================ SECTION AGENT (SARSA lineaire) ============================
+   
     rl = None
     if not __rl_in:
         rl = {'trained': False, 'reason': "agent pas encore entraine - lance agent.py"}
@@ -1095,7 +1095,7 @@ try:
                       'bias_push': bias_push, 'pos_push': pos_push, 'reconcile': rl_reconcile,
                       'drivers': drivers}
 
-    # ============================ SECTION NLP (texte) ============================
+   
     nlp = {'trained': False, 'seen': 0, 'market_sent': None, 'last_news': None}
     if __text_in:
         try:
@@ -1125,7 +1125,7 @@ try:
                             market_sent = None
             nlp = {'trained': True, 'seen': seen, 'market_sent': market_sent, 'last_news': last_news}
 
-    # ============================ GROUPES (37 valeurs brutes, 5 themes) ============================
+  
     rawmap = {FEAT[i]: raw[i] for i in range(len(FEAT))}
     groups = []
     for name, feats in GROUPS:
@@ -1134,7 +1134,7 @@ try:
             items.append({'feat': f, 'label': lab(f), 'val': fin(rawmap.get(f, 0.0)), 'fmt': FMT.get(f, 'num2')})
         groups.append({'name': name, 'items': items})
 
-    # ============================ "CE QU'ELLE NE FAIT PAS" ============================
+  
     not_doing = []
     if isinstance(sl, dict) and sl.get('trained') and sl.get('ignored'):
         ig = [lab(f) for f in sl['ignored']]
@@ -1456,7 +1456,7 @@ try:
                             'n_oos': n_oos, 'score': _fin(score), 'signif': False, 'keep': False, 'is_best': False})
             return out
 
-        # ---- PLAN explicite, journalise, plafonne a MAX_CELLS ----
+       
         PLAN = []
         for m in ('ridge1', 'ridge10', 'tree', 'knn'):
             for cell in [('ALL', 1), ('ALL', 5), ('ALL', 20), ('MICRO', 5), ('TREND', 5)]:
@@ -1500,11 +1500,11 @@ try:
 
         elapsed_grid = time.time() - t_start
 
-        # ---- garde-base : base_score = MEILLEURE base de reference SYNTHETIQUE (zero/mom), AUCUN modele appris dedans ----
+        
         base_rows = [r for r in rows if r.get('status') == 'baseline' and isinstance(r.get('score'), (int, float))]
         base_score = max([_fin(r.get('score', -1e9), -1e9) for r in base_rows], default=-1e9)
         base_valid = bool(base_rows) and base_score > -1e8     # une base exploitable existe-t-elle ?
-        # ---- selection (score robuste OOS, net de frais, penalise) ----
+       
         for r in rows:
             if r.get('status') != 'ok':
                 r.setdefault('keep', False); continue
@@ -1526,7 +1526,7 @@ try:
         for r in rows:
             r['is_best'] = bool(best is not None and r is best)
 
-        # ---- Phase B : balayage d'horizon sur le couple gagnant (meme protocole purge) ----
+       
         sweep_rows = []; HSW = [1, 3, 5, 10, 20, 50]; best_h = (best.get('horizon', 5) if best else 5)
         best_h_sure = False
         all_neg = True; sw_model = (best.get('model') if best else None); sw_fs = (best.get('featureset') if best else None)
@@ -1578,10 +1578,6 @@ try:
             phrase = ("Sur ce marche, l'horizon le plus rentable apres frais est ~%d barres "
                       "(net OOS %+.2f %%, Sharpe/transac %.2f) — avantage faible, coherent avec un marche quasi-efficient." % (best_h, bn, bs))
 
-        # ---- recommandation (face a la Stage 2) : refit sur tout l'echantillon valide, predire la derniere ligne CLOSE.
-        # keep est deja sans bougie en formation (features.py fait d.iloc[:-1]) -> Xf[-1] est la derniere bougie CLOTUREE.
-        # Pas de purge ici : une seule prediction VERS L'AVANT, il n'y a pas de test a proteger.
-        # TAILLE = pilotee par l'EDGE OOS mesure (oos_dir_acc-0.5), PAS par l'amplitude d'une prediction in-sample (anti-optimisme).
         rec = {'sens': 0, 'taille_hint': 0.0, 'horizon': int(best_h),
                'confiance': 'tres faible', 'tradeable': False,
                'why': "Aucun avantage net detecte -> rester PLAT.",
@@ -1621,7 +1617,7 @@ try:
             except Exception as e:
                 print('[reco erreur]', str(e)[:80])
 
-        # ---- JOURNAL FR structure, accumule ----
+    
         # n_folds reels : deduits d'un span representatif (h=5) ou du best -> evite d'afficher 4 a tort sur petit echantillon.
         try:
             _t5, _neff5 = build_targets(5)
@@ -1681,7 +1677,7 @@ try:
             return {'type': 'cellule', 'titre': titre, 'hypothese': hyp, 'test': test,
                     'resultat': res, 'decision': decision, 'pourquoi': pourquoi}
 
-        # cellules decisives : tous les gardes en premier, puis 1 representant par modele (MLP/kNN toujours inclus pour la pedagogie), cap 8.
+        
         decisive = [r for r in rows if r.get('status') == 'ok']
         decisive = sorted(decisive, key=lambda r: (0 if r.get('keep') else 1, -_fin(r.get('score', -1e9))))
         seen_mk = set(); chosen = []
@@ -1744,7 +1740,7 @@ __model_out = None  # DERNIERE ligne, inconditionnelle : ne JAMAIS persister de 
     try { localStorage.setItem("tradlab_ship", JSON.stringify(SHIPPED)); } catch (e) {}
   }
 
-  /* =================== ESPACE DE TRAVAIL (FS virtuel) =================== */
+  
   var fs = null, activeFile = null, forecastEntry = "ia.py";
   var cm = null, ta = null;
   function loadFS() {
@@ -1755,7 +1751,7 @@ __model_out = None  # DERNIERE ligne, inconditionnelle : ne JAMAIS persister de 
   function saveFS() { try { localStorage.setItem(FSKEY, JSON.stringify(fs)); } catch (e) {} }
   function fileList() { return Object.keys(fs).sort(function (a, b) { if (a === "ia.py") return -1; if (b === "ia.py") return 1; return a.localeCompare(b); }); }
 
-  /* =================== MÉMOIRE de l'IA =================== */
+ 
   function loadHist() { try { var a = JSON.parse(localStorage.getItem(HKEY)); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
   function saveHist(a) { try { localStorage.setItem(HKEY, JSON.stringify(a.slice(-300))); } catch (e) {} }
   function logActivation(o) { var h = loadHist(); h.push({ t: Date.now(), up: !!o.up, acc: o.dir_acc, r2: o.r2 }); saveHist(h); return h; }
@@ -1773,7 +1769,7 @@ __model_out = None  # DERNIERE ligne, inconditionnelle : ne JAMAIS persister de 
     if (o.center) window.TradSim.setForecast({ center: o.center, bandLow: o.bandLow, bandHigh: o.bandHigh, t0: t0, anchor: o.last_c });
   }
 
-  /* =================== IDE =================== */
+ 
   var host = null;
   var SHIPKEY = "tradlab_ia_shipped";
   function open() {
@@ -1946,7 +1942,7 @@ __model_out = None  # DERNIERE ligne, inconditionnelle : ne JAMAIS persister de 
       .catch(function (e) { busy(false); status(""); appendLog("\n✗ " + (e && e.message ? e.message : e) + "\n"); });
   }
 
-  /* =================== mode LIVE =================== */
+ 
   var liveOn = false, liveTimer = null, liveBusy = false, liveLastT = null, liveLastC = null;
   var mindTimer = null, mindBusy = false, mindLastT = null;
 
@@ -1978,7 +1974,7 @@ __model_out = None  # DERNIERE ligne, inconditionnelle : ne JAMAIS persister de 
     }).catch(function () { liveBusy = false; if (lb) lb.classList.remove("calc"); });
   }
 
-  /* =================== bandeau de résultat =================== */
+  
   function showBanner(o) {
     var old = document.getElementById("ai-banner"); if (old) old.remove();
     var b = document.createElement("div"); b.id = "ai-banner";
@@ -2011,7 +2007,7 @@ __model_out = None  # DERNIERE ligne, inconditionnelle : ne JAMAIS persister de 
     document.getElementById("aib-clear").addEventListener("click", function () { disableLive(); if (window.TradSim) { window.TradSim.clearForecast(); window.TradSim.clearOverlay(); } b.remove(); });
   }
 
-  /* =================== carte NLP (sentiment) =================== */
+
   function showNlpReadout(o) {
     var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]; }); };
     var r2 = function (v) { return Math.round((v || 0) * 100) / 100; };
@@ -2044,7 +2040,7 @@ __model_out = None  # DERNIERE ligne, inconditionnelle : ne JAMAIS persister de 
     });
   }
 
-  /* =================== carte EXPÉRIENCE Phase 3 =================== */
+ 
   function showExpReadout(o) {
     var old = document.getElementById("ai-exp"); if (old) old.remove();
     var b = document.createElement("div"); b.id = "ai-exp";
@@ -2503,7 +2499,7 @@ __model_out = None  # DERNIERE ligne, inconditionnelle : ne JAMAIS persister de 
     set("aib-h", o.K);
   }
 
-  /* =================== Octopus : lancement direct (onglet Terminal) =================== */
+
   var _launchBusy = false;
   function launch() {
     if (_launchBusy) return; _launchBusy = true;
@@ -2522,7 +2518,7 @@ __model_out = None  # DERNIERE ligne, inconditionnelle : ne JAMAIS persister de 
       .catch(function () { _launchBusy = false; if (lb) lb.classList.remove("busy"); setLbl("Lancer Octopus"); });
   }
 
-  /* =================== Octopus : panneau Historique (optimisations) =================== */
+ 
   function showHistory() {
     var old = document.getElementById("ai-hist"); if (old) old.remove();
     var b = document.createElement("div"); b.id = "ai-hist";
