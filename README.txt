@@ -1,4 +1,4 @@
-Octopus 0.1 - trading AI (the bot)
+Octopus 0.1 - analyse AI 0.FIRST V
 
 This repository contains the Octopus trading AI: the engine (js/tradl-lab.js) and its Python worker (js/tradl-ai-worker.js). The models it ships with - a supervised online predictor, a
 reinforcement-learning agent, an NLP sentiment classifier, an AutoML auto-optimizer, an explainable "X-ray" decomposition of the linear models, and the feature engineering - are
