@@ -1,4 +1,4 @@
-
+/* french version */  
 (function () {
   "use strict";
 
