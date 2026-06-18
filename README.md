@@ -7,7 +7,7 @@ written in Python, embedded inside tradl-lab.js, and executed directly in the br
 Important: this is the first version of Octopus (0.1), and the bot has never been tested on a real financial market. It has only been trained and evaluated on a fully artificial, simulated market generated from mathematical equations. Nothing in this project should be considered financial advice, and the bot makes no claim to predict real-world market behavior. Consequently, no claim is made regarding real-world trading performance, profitability, robustness, or suitability for live trading.
 
 
-This is only the bot, not a complete application, so it cannot run on its own. To run it you need a host environment that provides three things. First, a web page that loads these two
+This is only the algorithme , not a complete application, so it cannot run on its own. To run it you need a host environment that provides three things. First, a web page that loads these two
 scripts together with Pyodide (which brings Python to the browser) and CodeMirror (the in-browser code editor). Second, the scientific Python stack the models rely on - numpy, pandas and
 scikit-learn - which Pyodide downloads on demand the first time the bot runs. Third, a market API exposed on the global object window.TradSim, through which the bot reads candles (marketData),
 draws its forecast on the chart, and reads the current price. The host page, the market simulator
@@ -20,3 +20,5 @@ its reasoning journal. js/tradl-ai-worker.js is the Web Worker itself: it boots 
 The guiding idea is an honest AI: no look-ahead (the target is always the next candle),prequential evaluation (predict before learning, so the reported reliability is real), monitoring for overfitting, and a deliberately small edge because the market is near-efficient. The figures are meant to be trustworthy rather than impressive.
 
 License: MIT - see the LICENSE file.
+
+ 
